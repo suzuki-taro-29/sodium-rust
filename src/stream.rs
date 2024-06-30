@@ -169,7 +169,7 @@ where
         cd: &Cell<D>,
         ce: &Cell<E>,
         cf: &Cell<F>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<G>
     where
         B: Send + Clone + 'static,
@@ -180,28 +180,11 @@ where
         G: Send + Clone + 'static,
         FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        let ce = ce.clone();
-        let cf = cf.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        deps.push(ce.to_dep());
-        deps.push(cf.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| {
-                    f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample(), &cf.sample())
-                },
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self
+                .impl_
+                .snapshot6(&cb.impl_, &cc.impl_, &cd.impl_, &ce.impl_, &cf.impl_, f),
+        }
     }
 
     /// Transform this `Stream`'s event values with the supplied

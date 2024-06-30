@@ -13,6 +13,7 @@ use crate::lambda2;
 use crate::IsLambda3;
 use crate::IsLambda4;
 use crate::IsLambda5;
+use crate::IsLambda6;
 
 use parking_lot::Mutex;
 use parking_lot::RwLock;
@@ -349,6 +350,48 @@ impl<A: Send + 'static> Stream<A> {
             cb,
             lambda2(
                 move |a: &A, b: &B| f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample()),
+                deps,
+            ),
+        )
+    }
+
+    pub fn snapshot6<B, C, D, E, F, G, FN>(
+        &self,
+        cb: &Cell<B>,
+        cc: &Cell<C>,
+        cd: &Cell<D>,
+        ce: &Cell<E>,
+        cf: &Cell<F>,
+        mut f: FN,
+    ) -> Stream<G>
+    where
+        B: Send + Clone + 'static,
+        C: Send + Clone + 'static,
+        D: Send + Clone + 'static,
+        E: Send + Clone + 'static,
+        F: Send + Clone + 'static,
+        G: Send + Clone + 'static,
+        FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
+    {
+        let mut deps = if let Some(deps2) = f.deps_op() {
+            deps2.clone()
+        } else {
+            Vec::new()
+        };
+        let cc = cc.clone();
+        let cd = cd.clone();
+        let ce = ce.clone();
+        let cf = cf.clone();
+        deps.push(cc.to_dep());
+        deps.push(cd.to_dep());
+        deps.push(ce.to_dep());
+        deps.push(cf.to_dep());
+        self.snapshot(
+            cb,
+            lambda2(
+                move |a: &A, b: &B| {
+                    f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample(), &cf.sample())
+                },
                 deps,
             ),
         )
