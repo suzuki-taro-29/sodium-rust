@@ -1,6 +1,5 @@
 use crate::cell::Cell;
 use crate::impl_::dep::Dep;
-use crate::impl_::lambda::{IsLambda1, IsLambda2, IsLambda3, IsLambda4, IsLambda5, IsLambda6};
 use crate::impl_::stream::Stream as StreamImpl;
 use crate::listener::Listener;
 use crate::sodium_ctx::SodiumCtx;
@@ -82,7 +81,7 @@ where
     where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
-        FN: IsLambda2<A, B, C> + Send + Sync + 'static,
+        FN: FnMut(&A, &B) -> C + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.snapshot(&cb.impl_, f),
@@ -106,7 +105,7 @@ where
         B: Send + Clone + 'static,
         C: Send + Clone + 'static,
         D: Send + Clone + 'static,
-        FN: IsLambda3<A, B, C, D> + Send + Sync + 'static,
+        FN: FnMut(&A, &B, &C) -> D + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.snapshot3(&cb.impl_, &cc.impl_, f),
@@ -127,7 +126,7 @@ where
         C: Send + Clone + 'static,
         D: Send + Clone + 'static,
         E: Send + Clone + 'static,
-        FN: IsLambda4<A, B, C, D, E> + Send + Sync + 'static,
+        FN: FnMut(&A, &B, &C, &D) -> E + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.snapshot4(&cb.impl_, &cc.impl_, &cd.impl_, f),
@@ -150,7 +149,7 @@ where
         D: Send + Clone + 'static,
         E: Send + Clone + 'static,
         F: Send + Clone + 'static,
-        FN: IsLambda5<A, B, C, D, E, F> + Send + Sync + 'static,
+        FN: FnMut(&A, &B, &C, &D, &E) -> F + Send + Sync + 'static,
     {
         Stream {
             impl_: self
@@ -177,7 +176,7 @@ where
         E: Send + Clone + 'static,
         F: Send + Clone + 'static,
         G: Send + Clone + 'static,
-        FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
+        FN: FnMut(&A, &B, &C, &D, &E, &F) -> G + Send + Sync + 'static,
     {
         Stream {
             impl_: self
@@ -196,7 +195,7 @@ where
     pub fn map<B, FN>(&self, f: FN) -> Stream<B>
     where
         B: Send + Clone + 'static,
-        FN: IsLambda1<A, B> + Send + Sync + 'static,
+        FN: FnMut(&A) -> B + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.map(f),
@@ -214,7 +213,7 @@ where
     /// Return a `Stream` that only outputs events for which the predicate returns `true`.
     pub fn filter<PRED>(&self, pred: PRED) -> Stream<A>
     where
-        PRED: IsLambda1<A, bool> + Send + Sync + 'static,
+        PRED: FnMut(&A) -> bool + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.filter(pred),
@@ -248,7 +247,7 @@ where
     /// appear at the right.
     pub fn merge<FN>(&self, s2: &Stream<A>, f: FN) -> Stream<A>
     where
-        FN: IsLambda2<A, A, A> + Send + Sync + 'static,
+        FN: FnMut(&A, &A) -> A + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.merge(&s2.impl_, f),
@@ -295,7 +294,7 @@ where
     where
         B: Send + Clone + 'static,
         S: Send + Clone + 'static,
-        F: IsLambda2<A, S, (B, S)> + Send + Sync + 'static,
+        F: FnMut(&A, &S) -> (B, S) + Send + Sync + 'static,
     {
         self.collect_lazy(Lazy::new(move || init_state.clone()), f)
     }
@@ -306,7 +305,7 @@ where
     where
         B: Send + Clone + 'static,
         S: Send + Clone + 'static,
-        F: IsLambda2<A, S, (B, S)> + Send + Sync + 'static,
+        F: FnMut(&A, &S) -> (B, S) + Send + Sync + 'static,
     {
         Stream {
             impl_: self.impl_.collect_lazy(init_state, f),
@@ -324,7 +323,7 @@ where
     pub fn accum<S, F>(&self, init_state: S, f: F) -> Cell<S>
     where
         S: Send + Clone + 'static,
-        F: IsLambda2<A, S, S> + Send + Sync + 'static,
+        F: FnMut(&A, &S) -> S + Send + Sync + 'static,
     {
         self.accum_lazy(Lazy::new(move || init_state.clone()), f)
     }
@@ -334,7 +333,7 @@ where
     pub fn accum_lazy<S, F>(&self, init_state: Lazy<S>, f: F) -> Cell<S>
     where
         S: Send + Clone + 'static,
-        F: IsLambda2<A, S, S> + Send + Sync + 'static,
+        F: FnMut(&A, &S) -> S + Send + Sync + 'static,
     {
         Cell {
             impl_: self.impl_.accum_lazy(init_state, f),
@@ -349,7 +348,7 @@ where
     /// deregistered if [`Listener::unlisten`] is called explicitly.
     pub fn listen_weak<K>(&self, k: K) -> Listener
     where
-        K: IsLambda1<A, ()> + Send + Sync + 'static,
+        K: FnMut(&A) -> () + Send + Sync + 'static,
     {
         Listener {
             impl_: self.impl_.listen_weak(k),
@@ -370,7 +369,7 @@ where
     /// [`StreamSink::send`][crate::StreamSink::send] in the handler.
     pub fn listen<K>(&self, k: K) -> Listener
     where
-        K: IsLambda1<A, ()> + Send + Sync + 'static,
+        K: FnMut(&A) -> () + Send + Sync + 'static,
     {
         Listener {
             impl_: self.impl_.listen(k),
