@@ -9,6 +9,8 @@ use crate::impl_::node::{box_clone_vec_is_node, IsNode, IsWeakNode, Node, WeakNo
 use crate::impl_::sodium_ctx::SodiumCtx;
 use crate::impl_::stream_loop::StreamLoop;
 use crate::impl_::stream_sink::StreamSink;
+use crate::lambda2;
+use crate::IsLambda3;
 
 use parking_lot::Mutex;
 use parking_lot::RwLock;
@@ -260,6 +262,26 @@ impl<A: Send + 'static> Stream<A> {
 
     pub fn snapshot1<B: Send + Clone + 'static>(&self, cb: &Cell<B>) -> Stream<B> {
         self.snapshot(cb, |_a: &A, b: &B| b.clone())
+    }
+
+    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, mut f: FN) -> Stream<D>
+    where
+        B: Send + Clone + 'static,
+        C: Send + Clone + 'static,
+        D: Send + Clone + 'static,
+        FN: IsLambda3<A, B, C, D> + Send + Sync + 'static,
+    {
+        let mut deps = if let Some(deps2) = f.deps_op() {
+            deps2.clone()
+        } else {
+            Vec::new()
+        };
+        let cc = cc.clone();
+        deps.push(cc.to_dep());
+        self.snapshot(
+            cb,
+            lambda2(move |a: &A, b: &B| f.call(a, b, &cc.sample()), deps),
+        )
     }
 
     pub fn map<B: Send + 'static, FN: IsLambda1<A, B> + Send + Sync + 'static>(

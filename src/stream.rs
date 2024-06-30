@@ -102,24 +102,16 @@ where
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of two cells.
-    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, mut f: FN) -> Stream<D>
+    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, f: FN) -> Stream<D>
     where
         B: Send + Clone + 'static,
         C: Send + Clone + 'static,
         D: Send + Clone + 'static,
         FN: IsLambda3<A, B, C, D> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        deps.push(cc.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(move |a: &A, b: &B| f.call(a, b, &cc.sample()), deps),
-        )
+        Stream {
+            impl_: self.impl_.snapshot3(&cb.impl_, &cc.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
