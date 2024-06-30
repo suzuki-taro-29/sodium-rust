@@ -29,6 +29,24 @@ impl<A> Clone for Cell<A> {
     }
 }
 
+impl<A: Clone + Send + 'static> Cell<Stream<A>> {
+    /// Unwrap a [`Stream`] in a `Cell` to give a time-varying stream implementation.
+    pub fn switch_s(&self) -> Stream<A> {
+        Stream {
+            impl_: CellImpl::switch_s(&self.map(|sa: &Stream<A>| sa.impl_.clone()).impl_),
+        }
+    }
+}
+
+impl<A: Clone + Send + 'static> Cell<Cell<A>> {
+    /// Unwrap a `Cell` in another `Cell` to give a time-varying cell implementation.
+    pub fn switch_c(&self) -> Cell<A> {
+        Cell {
+            impl_: CellImpl::switch_c(&self.map(|ca: &Cell<A>| ca.impl_.clone()).impl_),
+        }
+    }
+}
+
 impl<A: Clone + Send + 'static> Cell<A> {
     /// Create a `Cell` with a constant value.
     pub fn new(sodium_ctx: &SodiumCtx, value: A) -> Cell<A> {
@@ -223,20 +241,6 @@ impl<A: Clone + Send + 'static> Cell<A> {
             impl_: self
                 .impl_
                 .lift6(&cb.impl_, &cc.impl_, &cd.impl_, &ce.impl_, &cf.impl_, f),
-        }
-    }
-
-    /// Unwrap a [`Stream`] in a `Cell` to give a time-varying stream implementation.
-    pub fn switch_s(csa: &Cell<Stream<A>>) -> Stream<A> {
-        Stream {
-            impl_: CellImpl::switch_s(&csa.map(|sa: &Stream<A>| sa.impl_.clone()).impl_),
-        }
-    }
-
-    /// Unwrap a `Cell` in another `Cell` to give a time-varying cell implementation.
-    pub fn switch_c(cca: &Cell<Cell<A>>) -> Cell<A> {
-        Cell {
-            impl_: CellImpl::switch_c(&cca.map(|ca: &Cell<A>| ca.impl_.clone()).impl_),
         }
     }
 
