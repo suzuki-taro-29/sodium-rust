@@ -21,7 +21,10 @@ impl<A> Clone for CellLoop<A> {
     }
 }
 
-impl<A: Send + Clone + 'static> CellLoop<A> {
+impl<A> CellLoop<A>
+where
+    A: Send + Clone + 'static,
+{
     /// Create a new `CellLoop` in the given context.
     pub fn new(sodium_ctx: &SodiumCtx) -> CellLoop<A> {
         CellLoop {
