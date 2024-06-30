@@ -1,6 +1,5 @@
 use crate::cell::Cell;
 use crate::impl_::dep::Dep;
-use crate::impl_::lambda::{lambda1, lambda2};
 use crate::impl_::lambda::{IsLambda1, IsLambda2, IsLambda3, IsLambda4, IsLambda5, IsLambda6};
 use crate::impl_::stream::Stream as StreamImpl;
 use crate::listener::Listener;
@@ -275,9 +274,9 @@ where
     /// Return a stream that only outputs events from the input stream
     /// when the specified cell's value is true.
     pub fn gate(&self, cpred: &Cell<bool>) -> Stream<A> {
-        let cpred = cpred.clone();
-        let cpred_dep = cpred.to_dep();
-        self.filter(lambda1(move |_: &A| cpred.sample(), vec![cpred_dep]))
+        Stream {
+            impl_: self.impl_.gate(&cpred.impl_),
+        }
     }
 
     /// Return a stream that outputs only one value, which is the next

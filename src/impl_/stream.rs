@@ -517,6 +517,15 @@ impl<A: Send + 'static> Stream<A> {
         sodium_ctx.transaction(|| Cell::_new(&sodium_ctx, self.clone(), a))
     }
 
+    pub fn gate(&self, cpred: &Cell<bool>) -> Stream<A>
+    where
+        A: Clone,
+    {
+        let cpred = cpred.clone();
+        let cpred_dep = cpred.to_dep();
+        self.filter(lambda1(move |_: &A| cpred.sample(), vec![cpred_dep]))
+    }
+
     pub fn collect_lazy<B, S, F>(&self, init_state: Lazy<S>, f: F) -> Stream<B>
     where
         B: Send + Clone + 'static,
