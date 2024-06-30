@@ -25,7 +25,10 @@ impl<A> Clone for Stream<A> {
     }
 }
 
-impl<A: Clone + Send + 'static> Stream<Option<A>> {
+impl<A> Stream<Option<A>>
+where
+    A: Clone + Send + 'static,
+{
     /// Return a `Stream` that only outputs events that have present
     /// values, removing the `Option` wrapper and discarding empty
     /// values.
@@ -35,10 +38,10 @@ impl<A: Clone + Send + 'static> Stream<Option<A>> {
     }
 }
 
-impl<
-        A: Clone + Send + Sync + 'static,
-        COLLECTION: IntoIterator<Item = A> + Clone + Send + 'static,
-    > Stream<COLLECTION>
+impl<A, COLLECTION> Stream<COLLECTION>
+where
+    A: Clone + Send + Sync + 'static,
+    COLLECTION: IntoIterator<Item = A> + Clone + Send + 'static,
 {
     /// Flatten a `Stream` of a collection of `A` into a `Stream` of
     /// single `A`s.
@@ -49,7 +52,10 @@ impl<
     }
 }
 
-impl<A: Clone + Send + 'static> Stream<A> {
+impl<A> Stream<A>
+where
+    A: Clone + Send + 'static,
+{
     /// Create a `Stream` that will never fire.
     pub fn new(sodium_ctx: &SodiumCtx) -> Stream<A> {
         Stream {
@@ -73,15 +79,12 @@ impl<A: Clone + Send + 'static> Stream<A> {
     /// transaction. To put this another way, `snapshot` always sees
     /// the value of a cell as it wass before any state changes from
     /// the current transaction.
-    pub fn snapshot<
+    pub fn snapshot<B, C, FN>(&self, cb: &Cell<B>, f: FN) -> Stream<C>
+    where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
         FN: IsLambda2<A, B, C> + Send + Sync + 'static,
-    >(
-        &self,
-        cb: &Cell<B>,
-        f: FN,
-    ) -> Stream<C> {
+    {
         Stream {
             impl_: self.impl_.snapshot(&cb.impl_, f),
         }
@@ -90,23 +93,22 @@ impl<A: Clone + Send + 'static> Stream<A> {
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// cell's value at the time of the event firing, ignoring the
     /// stream's value.
-    pub fn snapshot1<B: Send + Clone + 'static>(&self, cb: &Cell<B>) -> Stream<B> {
+    pub fn snapshot1<B>(&self, cb: &Cell<B>) -> Stream<B>
+    where
+        B: Send + Clone + 'static,
+    {
         self.snapshot(cb, |_a: &A, b: &B| b.clone())
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of two cells.
-    pub fn snapshot3<
+    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, mut f: FN) -> Stream<D>
+    where
         B: Send + Clone + 'static,
         C: Send + Clone + 'static,
         D: Send + Clone + 'static,
         FN: IsLambda3<A, B, C, D> + Send + Sync + 'static,
-    >(
-        &self,
-        cb: &Cell<B>,
-        cc: &Cell<C>,
-        mut f: FN,
-    ) -> Stream<D> {
+    {
         let mut deps = if let Some(deps2) = f.deps_op() {
             deps2.clone()
         } else {
@@ -122,19 +124,20 @@ impl<A: Clone + Send + 'static> Stream<A> {
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of three cells.
-    pub fn snapshot4<
-        B: Send + Clone + 'static,
-        C: Send + Clone + 'static,
-        D: Send + Clone + 'static,
-        E: Send + Clone + 'static,
-        FN: IsLambda4<A, B, C, D, E> + Send + Sync + 'static,
-    >(
+    pub fn snapshot4<B, C, D, E, FN>(
         &self,
         cb: &Cell<B>,
         cc: &Cell<C>,
         cd: &Cell<D>,
         mut f: FN,
-    ) -> Stream<E> {
+    ) -> Stream<E>
+    where
+        B: Send + Clone + 'static,
+        C: Send + Clone + 'static,
+        D: Send + Clone + 'static,
+        E: Send + Clone + 'static,
+        FN: IsLambda4<A, B, C, D, E> + Send + Sync + 'static,
+    {
         let mut deps = if let Some(deps2) = f.deps_op() {
             deps2.clone()
         } else {
@@ -155,21 +158,22 @@ impl<A: Clone + Send + 'static> Stream<A> {
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of four cells.
-    pub fn snapshot5<
-        B: Send + Clone + 'static,
-        C: Send + Clone + 'static,
-        D: Send + Clone + 'static,
-        E: Send + Clone + 'static,
-        F: Send + Clone + 'static,
-        FN: IsLambda5<A, B, C, D, E, F> + Send + Sync + 'static,
-    >(
+    pub fn snapshot5<B, C, D, E, F, FN>(
         &self,
         cb: &Cell<B>,
         cc: &Cell<C>,
         cd: &Cell<D>,
         ce: &Cell<E>,
         mut f: FN,
-    ) -> Stream<F> {
+    ) -> Stream<F>
+    where
+        B: Send + Clone + 'static,
+        C: Send + Clone + 'static,
+        D: Send + Clone + 'static,
+        E: Send + Clone + 'static,
+        F: Send + Clone + 'static,
+        FN: IsLambda5<A, B, C, D, E, F> + Send + Sync + 'static,
+    {
         let mut deps = if let Some(deps2) = f.deps_op() {
             deps2.clone()
         } else {
@@ -192,15 +196,7 @@ impl<A: Clone + Send + 'static> Stream<A> {
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of five cells.
-    pub fn snapshot6<
-        B: Send + Clone + 'static,
-        C: Send + Clone + 'static,
-        D: Send + Clone + 'static,
-        E: Send + Clone + 'static,
-        F: Send + Clone + 'static,
-        G: Send + Clone + 'static,
-        FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
-    >(
+    pub fn snapshot6<B, C, D, E, F, G, FN>(
         &self,
         cb: &Cell<B>,
         cc: &Cell<C>,
@@ -208,7 +204,16 @@ impl<A: Clone + Send + 'static> Stream<A> {
         ce: &Cell<E>,
         cf: &Cell<F>,
         mut f: FN,
-    ) -> Stream<G> {
+    ) -> Stream<G>
+    where
+        B: Send + Clone + 'static,
+        C: Send + Clone + 'static,
+        D: Send + Clone + 'static,
+        E: Send + Clone + 'static,
+        F: Send + Clone + 'static,
+        G: Send + Clone + 'static,
+        FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
+    {
         let mut deps = if let Some(deps2) = f.deps_op() {
             deps2.clone()
         } else {
@@ -240,25 +245,29 @@ impl<A: Clone + Send + 'static> Stream<A> {
     /// [`Cell::sample`], in which case it's equivalent to
     /// [`snapshot`][Stream::snapshot]ing the cell. In addition, the
     /// function must be referentially transparent.
-    pub fn map<B: Send + Clone + 'static, FN: IsLambda1<A, B> + Send + Sync + 'static>(
-        &self,
-        f: FN,
-    ) -> Stream<B> {
+    pub fn map<B, FN>(&self, f: FN) -> Stream<B>
+    where
+        B: Send + Clone + 'static,
+        FN: IsLambda1<A, B> + Send + Sync + 'static,
+    {
         Stream {
             impl_: self.impl_.map(f),
         }
     }
 
     /// Transform this `Stream`'s event values into the specified constant value.
-    pub fn map_to<B: Send + Sync + Clone + 'static>(&self, b: B) -> Stream<B> {
+    pub fn map_to<B>(&self, b: B) -> Stream<B>
+    where
+        B: Send + Sync + Clone + 'static,
+    {
         self.map(move |_: &A| b.clone())
     }
 
     /// Return a `Stream` that only outputs events for which the predicate returns `true`.
-    pub fn filter<PRED: IsLambda1<A, bool> + Send + Sync + 'static>(
-        &self,
-        pred: PRED,
-    ) -> Stream<A> {
+    pub fn filter<PRED>(&self, pred: PRED) -> Stream<A>
+    where
+        PRED: IsLambda1<A, bool> + Send + Sync + 'static,
+    {
         Stream {
             impl_: self.impl_.filter(pred),
         }
@@ -289,11 +298,10 @@ impl<A: Clone + Send + 'static> Stream<A> {
     /// transaction. The event from `self` will appear at the left
     /// input of the combining function, and the event from `s2` will
     /// appear at the right.
-    pub fn merge<FN: IsLambda2<A, A, A> + Send + Sync + 'static>(
-        &self,
-        s2: &Stream<A>,
-        f: FN,
-    ) -> Stream<A> {
+    pub fn merge<FN>(&self, s2: &Stream<A>, f: FN) -> Stream<A>
+    where
+        FN: IsLambda2<A, A, A> + Send + Sync + 'static,
+    {
         Stream {
             impl_: self.impl_.merge(&s2.impl_, f),
         }
@@ -391,7 +399,10 @@ impl<A: Clone + Send + 'static> Stream<A> {
     ///
     /// With [`listen`][Stream::listen] the listener is only
     /// deregistered if [`Listener::unlisten`] is called explicitly.
-    pub fn listen_weak<K: IsLambda1<A, ()> + Send + Sync + 'static>(&self, k: K) -> Listener {
+    pub fn listen_weak<K>(&self, k: K) -> Listener
+    where
+        K: IsLambda1<A, ()> + Send + Sync + 'static,
+    {
         Listener {
             impl_: self.impl_.listen_weak(k),
         }
@@ -409,7 +420,10 @@ impl<A: Clone + Send + 'static> Stream<A> {
     /// handler should not block. It also is not allowed to use
     /// [`CellSink::send`][crate::CellSink::send] or
     /// [`StreamSink::send`][crate::StreamSink::send] in the handler.
-    pub fn listen<K: IsLambda1<A, ()> + Send + Sync + 'static>(&self, k: K) -> Listener {
+    pub fn listen<K>(&self, k: K) -> Listener
+    where
+        K: IsLambda1<A, ()> + Send + Sync + 'static,
+    {
         Listener {
             impl_: self.impl_.listen(k),
         }
