@@ -1,4 +1,4 @@
-use crate::{lambda1, Cell, CellLoop, Operational, SodiumCtx, Stream, StreamLoop, StreamSink};
+use crate::{Cell, CellLoop, Operational, SodiumCtx, Stream, StreamLoop, StreamSink};
 
 use std::sync::{Arc, Mutex};
 
@@ -1256,11 +1256,8 @@ fn switch_c() {
         let ca = ssc.stream().map(|s: &SC| s.a).filter_option().hold("A");
         let cb = ssc.stream().map(|s: &SC| s.b).filter_option().hold("a");
         let csw_str = ssc.stream().map(|s: &SC| s.sw).filter_option().hold("ca");
-        let csw_deps = vec![ca.to_dep(), cb.to_dep()];
-        let csw = csw_str.map(lambda1(
-            move |s: &&'static str| if *s == "ca" { ca.clone() } else { cb.clone() },
-            csw_deps,
-        ));
+        let csw =
+            csw_str.map(move |s: &&'static str| if *s == "ca" { ca.clone() } else { cb.clone() });
         let co = Cell::switch_c(&csw);
         let out = Arc::new(Mutex::new(Vec::new()));
         {
@@ -1311,11 +1308,9 @@ fn switch_s() {
         let sa = sss.stream().map(|s: &SS| s.a);
         let sb = sss.stream().map(|s: &SS| s.b);
         let csw_str = sss.stream().map(|s: &SS| s.sw).filter_option().hold("sa");
-        let csw_deps = vec![sa.to_dep(), sb.to_dep()];
-        let csw: Cell<Stream<&'static str>> = csw_str.map(lambda1(
-            move |sw: &&'static str| if *sw == "sa" { sa.clone() } else { sb.clone() },
-            csw_deps,
-        ));
+
+        let csw: Cell<Stream<&'static str>> =
+            csw_str.map(move |sw: &&'static str| if *sw == "sa" { sa.clone() } else { sb.clone() });
         let so = Cell::switch_s(&csw);
         let out = Arc::new(Mutex::new(Vec::<&'static str>::new()));
         {
