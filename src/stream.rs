@@ -1,6 +1,5 @@
 use crate::cell::Cell;
 use crate::impl_::dep::Dep;
-use crate::impl_::lambda::{lambda1, lambda2};
 use crate::impl_::lambda::{IsLambda1, IsLambda2, IsLambda3, IsLambda4, IsLambda5, IsLambda6};
 use crate::impl_::stream::Stream as StreamImpl;
 use crate::listener::Listener;
@@ -102,24 +101,16 @@ where
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
     /// value of two cells.
-    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, mut f: FN) -> Stream<D>
+    pub fn snapshot3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, f: FN) -> Stream<D>
     where
         B: Send + Clone + 'static,
         C: Send + Clone + 'static,
         D: Send + Clone + 'static,
         FN: IsLambda3<A, B, C, D> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        deps.push(cc.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(move |a: &A, b: &B| f.call(a, b, &cc.sample()), deps),
-        )
+        Stream {
+            impl_: self.impl_.snapshot3(&cb.impl_, &cc.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
@@ -129,7 +120,7 @@ where
         cb: &Cell<B>,
         cc: &Cell<C>,
         cd: &Cell<D>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<E>
     where
         B: Send + Clone + 'static,
@@ -138,22 +129,9 @@ where
         E: Send + Clone + 'static,
         FN: IsLambda4<A, B, C, D, E> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| f.call(a, b, &cc.sample(), &cd.sample()),
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self.impl_.snapshot4(&cb.impl_, &cc.impl_, &cd.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
@@ -164,7 +142,7 @@ where
         cc: &Cell<C>,
         cd: &Cell<D>,
         ce: &Cell<E>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<F>
     where
         B: Send + Clone + 'static,
@@ -174,24 +152,11 @@ where
         F: Send + Clone + 'static,
         FN: IsLambda5<A, B, C, D, E, F> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        let ce = ce.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        deps.push(ce.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample()),
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self
+                .impl_
+                .snapshot5(&cb.impl_, &cc.impl_, &cd.impl_, &ce.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
@@ -203,7 +168,7 @@ where
         cd: &Cell<D>,
         ce: &Cell<E>,
         cf: &Cell<F>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<G>
     where
         B: Send + Clone + 'static,
@@ -214,28 +179,11 @@ where
         G: Send + Clone + 'static,
         FN: IsLambda6<A, B, C, D, E, F, G> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        let ce = ce.clone();
-        let cf = cf.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        deps.push(ce.to_dep());
-        deps.push(cf.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| {
-                    f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample(), &cf.sample())
-                },
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self
+                .impl_
+                .snapshot6(&cb.impl_, &cc.impl_, &cd.impl_, &ce.impl_, &cf.impl_, f),
+        }
     }
 
     /// Transform this `Stream`'s event values with the supplied
@@ -326,9 +274,9 @@ where
     /// Return a stream that only outputs events from the input stream
     /// when the specified cell's value is true.
     pub fn gate(&self, cpred: &Cell<bool>) -> Stream<A> {
-        let cpred = cpred.clone();
-        let cpred_dep = cpred.to_dep();
-        self.filter(lambda1(move |_: &A| cpred.sample(), vec![cpred_dep]))
+        Stream {
+            impl_: self.impl_.gate(&cpred.impl_),
+        }
     }
 
     /// Return a stream that outputs only one value, which is the next
