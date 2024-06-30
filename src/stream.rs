@@ -143,7 +143,7 @@ where
         cc: &Cell<C>,
         cd: &Cell<D>,
         ce: &Cell<E>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<F>
     where
         B: Send + Clone + 'static,
@@ -153,24 +153,11 @@ where
         F: Send + Clone + 'static,
         FN: IsLambda5<A, B, C, D, E, F> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        let ce = ce.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        deps.push(ce.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| f.call(a, b, &cc.sample(), &cd.sample(), &ce.sample()),
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self
+                .impl_
+                .snapshot5(&cb.impl_, &cc.impl_, &cd.impl_, &ce.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
