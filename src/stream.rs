@@ -121,7 +121,7 @@ where
         cb: &Cell<B>,
         cc: &Cell<C>,
         cd: &Cell<D>,
-        mut f: FN,
+        f: FN,
     ) -> Stream<E>
     where
         B: Send + Clone + 'static,
@@ -130,22 +130,9 @@ where
         E: Send + Clone + 'static,
         FN: IsLambda4<A, B, C, D, E> + Send + Sync + 'static,
     {
-        let mut deps = if let Some(deps2) = f.deps_op() {
-            deps2.clone()
-        } else {
-            Vec::new()
-        };
-        let cc = cc.clone();
-        let cd = cd.clone();
-        deps.push(cc.to_dep());
-        deps.push(cd.to_dep());
-        self.snapshot(
-            cb,
-            lambda2(
-                move |a: &A, b: &B| f.call(a, b, &cc.sample(), &cd.sample()),
-                deps,
-            ),
-        )
+        Stream {
+            impl_: self.impl_.snapshot4(&cb.impl_, &cc.impl_, &cd.impl_, f),
+        }
     }
 
     /// A variant of [`snapshot`][Stream::snapshot] that captures the
