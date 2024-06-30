@@ -6,19 +6,28 @@ use crate::Stream;
 pub struct Operational {}
 
 impl Operational {
-    pub fn updates<A: Clone + Send + 'static>(ca: &Cell<A>) -> Stream<A> {
+    pub fn updates<A>(ca: &Cell<A>) -> Stream<A>
+    where
+        A: Clone + Send + 'static,
+    {
         Stream {
             impl_: ca.impl_.updates(),
         }
     }
 
-    pub fn value<A: Clone + Send + 'static>(ca: &Cell<A>) -> Stream<A> {
+    pub fn value<A>(ca: &Cell<A>) -> Stream<A>
+    where
+        A: Clone + Send + 'static,
+    {
         Stream {
             impl_: ca.impl_.value(),
         }
     }
 
-    pub fn defer<A: Clone + Send + 'static>(sa: &Stream<A>) -> Stream<A> {
+    pub fn defer<A>(sa: &Stream<A>) -> Stream<A>
+    where
+        A: Clone + Send + 'static,
+    {
         Stream {
             impl_: sa.impl_.defer(),
         }

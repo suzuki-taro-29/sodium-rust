@@ -29,7 +29,10 @@ impl<A> Clone for Cell<A> {
     }
 }
 
-impl<A: Clone + Send + 'static> Cell<Stream<A>> {
+impl<A> Cell<Stream<A>>
+where
+    A: Clone + Send + 'static,
+{
     /// Unwrap a [`Stream`] in a `Cell` to give a time-varying stream implementation.
     pub fn switch_s(&self) -> Stream<A> {
         Stream {
@@ -38,7 +41,10 @@ impl<A: Clone + Send + 'static> Cell<Stream<A>> {
     }
 }
 
-impl<A: Clone + Send + 'static> Cell<Cell<A>> {
+impl<A> Cell<Cell<A>>
+where
+    A: Clone + Send + 'static,
+{
     /// Unwrap a `Cell` in another `Cell` to give a time-varying cell implementation.
     pub fn switch_c(&self) -> Cell<A> {
         Cell {
@@ -47,7 +53,10 @@ impl<A: Clone + Send + 'static> Cell<Cell<A>> {
     }
 }
 
-impl<A: Clone + Send + 'static> Cell<A> {
+impl<A> Cell<A>
+where
+    A: Clone + Send + 'static,
+{
     /// Create a `Cell` with a constant value.
     pub fn new(sodium_ctx: &SodiumCtx, value: A) -> Cell<A> {
         Cell {
@@ -126,10 +135,11 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// The returned `Cell` always reflects the value produced by the
     /// function applied to the input `Cell`s value. The given
     /// function _must_ be referentially transparent.
-    pub fn map<B: Clone + Send + 'static, FN: IsLambda1<A, B> + Send + Sync + 'static>(
-        &self,
-        f: FN,
-    ) -> Cell<B> {
+    pub fn map<B, FN>(&self, f: FN) -> Cell<B>
+    where
+        B: Clone + Send + 'static,
+        FN: IsLambda1<A, B> + Send + Sync + 'static,
+    {
         Cell {
             impl_: self.impl_.map(f),
         }
@@ -138,15 +148,12 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// Lift a binary function into cells so the returned [`Cell`]
     /// always reflects the specified function applied to the input
     /// cells' values.
-    pub fn lift2<
+    pub fn lift2<B, C, FN>(&self, cb: &Cell<B>, f: FN) -> Cell<C>
+    where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
         FN: IsLambda2<A, B, C> + Send + 'static,
-    >(
-        &self,
-        cb: &Cell<B>,
-        f: FN,
-    ) -> Cell<C> {
+    {
         Cell {
             impl_: self.impl_.lift2(&cb.impl_, f),
         }
@@ -155,17 +162,13 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// Lift a ternary function into cells so the returned [`Cell`]
     /// always reflects the specified function applied to the input
     /// cells' values.
-    pub fn lift3<
+    pub fn lift3<B, C, D, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, f: FN) -> Cell<D>
+    where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
         D: Clone + Send + 'static,
         FN: IsLambda3<A, B, C, D> + Send + 'static,
-    >(
-        &self,
-        cb: &Cell<B>,
-        cc: &Cell<C>,
-        f: FN,
-    ) -> Cell<D> {
+    {
         Cell {
             impl_: self.impl_.lift3(&cb.impl_, &cc.impl_, f),
         }
@@ -174,19 +177,14 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// Lift a quaternary function into cells so the returned [`Cell`]
     /// always reflects the specified function applied to the input
     /// cells' values.
-    pub fn lift4<
+    pub fn lift4<B, C, D, E, FN>(&self, cb: &Cell<B>, cc: &Cell<C>, cd: &Cell<D>, f: FN) -> Cell<E>
+    where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
         D: Clone + Send + 'static,
         E: Clone + Send + 'static,
         FN: IsLambda4<A, B, C, D, E> + Send + 'static,
-    >(
-        &self,
-        cb: &Cell<B>,
-        cc: &Cell<C>,
-        cd: &Cell<D>,
-        f: FN,
-    ) -> Cell<E> {
+    {
         Cell {
             impl_: self.impl_.lift4(&cb.impl_, &cc.impl_, &cd.impl_, f),
         }
@@ -195,21 +193,22 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// Lift a five-argument function into cells so the returned
     /// [`Cell`] always reflects the specified function applied to the
     /// input cells' values.
-    pub fn lift5<
-        B: Clone + Send + 'static,
-        C: Clone + Send + 'static,
-        D: Clone + Send + 'static,
-        E: Clone + Send + 'static,
-        F: Clone + Send + 'static,
-        FN: IsLambda5<A, B, C, D, E, F> + Send + 'static,
-    >(
+    pub fn lift5<B, C, D, E, F, FN>(
         &self,
         cb: &Cell<B>,
         cc: &Cell<C>,
         cd: &Cell<D>,
         ce: &Cell<E>,
         f: FN,
-    ) -> Cell<F> {
+    ) -> Cell<F>
+    where
+        B: Clone + Send + 'static,
+        C: Clone + Send + 'static,
+        D: Clone + Send + 'static,
+        E: Clone + Send + 'static,
+        F: Clone + Send + 'static,
+        FN: IsLambda5<A, B, C, D, E, F> + Send + 'static,
+    {
         Cell {
             impl_: self
                 .impl_
@@ -220,15 +219,7 @@ impl<A: Clone + Send + 'static> Cell<A> {
     /// Lift a six argument function into cells so the returned
     /// [`Cell`] always reflects the specified function applied to the
     /// input cells' values.
-    pub fn lift6<
-        B: Clone + Send + 'static,
-        C: Clone + Send + 'static,
-        D: Clone + Send + 'static,
-        E: Clone + Send + 'static,
-        F: Clone + Send + 'static,
-        G: Clone + Send + 'static,
-        FN: IsLambda6<A, B, C, D, E, F, G> + Send + 'static,
-    >(
+    pub fn lift6<B, C, D, E, F, G, FN>(
         &self,
         cb: &Cell<B>,
         cc: &Cell<C>,
@@ -236,7 +227,16 @@ impl<A: Clone + Send + 'static> Cell<A> {
         ce: &Cell<E>,
         cf: &Cell<F>,
         f: FN,
-    ) -> Cell<G> {
+    ) -> Cell<G>
+    where
+        B: Clone + Send + 'static,
+        C: Clone + Send + 'static,
+        D: Clone + Send + 'static,
+        E: Clone + Send + 'static,
+        F: Clone + Send + 'static,
+        G: Clone + Send + 'static,
+        FN: IsLambda6<A, B, C, D, E, F, G> + Send + 'static,
+    {
         Cell {
             impl_: self
                 .impl_
@@ -246,7 +246,10 @@ impl<A: Clone + Send + 'static> Cell<A> {
 
     /// A variant of [`listen`][Cell::listen] that will deregister the
     /// listener automatically if the listener is garbage-collected.
-    pub fn listen_weak<K: FnMut(&A) + Send + Sync + 'static>(&self, k: K) -> Listener {
+    pub fn listen_weak<K>(&self, k: K) -> Listener
+    where
+        K: FnMut(&A) + Send + Sync + 'static,
+    {
         Listener {
             impl_: self.impl_.listen_weak(k),
         }
@@ -260,7 +263,10 @@ impl<A: Clone + Send + 'static> Cell<A> {
     ///
     /// This is an operational mechanism for interfacing between the
     /// world of I/O and FRP.
-    pub fn listen<K: IsLambda1<A, ()> + Send + Sync + 'static>(&self, k: K) -> Listener {
+    pub fn listen<K>(&self, k: K) -> Listener
+    where
+        K: IsLambda1<A, ()> + Send + Sync + 'static,
+    {
         Listener {
             impl_: self.impl_.listen(k),
         }

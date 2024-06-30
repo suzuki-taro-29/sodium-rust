@@ -19,7 +19,10 @@ impl<A> Clone for CellSink<A> {
     }
 }
 
-impl<A: Clone + Send + 'static> CellSink<A> {
+impl<A> CellSink<A>
+where
+    A: Clone + Send + 'static,
+{
     /// Create a new `CellSink` in the given context.
     pub fn new(sodium_ctx: &SodiumCtx, a: A) -> CellSink<A> {
         CellSink {
