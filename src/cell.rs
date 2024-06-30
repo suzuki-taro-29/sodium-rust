@@ -1,5 +1,4 @@
 use crate::impl_::cell::Cell as CellImpl;
-use crate::impl_::lambda::IsLambda1;
 use crate::impl_::lazy::Lazy;
 use crate::listener::Listener;
 use crate::sodium_ctx::SodiumCtx;
@@ -260,7 +259,7 @@ where
     /// world of I/O and FRP.
     pub fn listen<K>(&self, k: K) -> Listener
     where
-        K: IsLambda1<A, ()> + Send + Sync + 'static,
+        K: FnMut(&A) -> () + Send + Sync + 'static,
     {
         Listener {
             impl_: self.impl_.listen(k),
