@@ -1,6 +1,5 @@
 use crate::cell::Cell;
 use crate::impl_::dep::Dep;
-use crate::impl_::lambda::{IsLambda1, IsLambda2, IsLambda3, IsLambda4, IsLambda5, IsLambda6};
 use crate::impl_::stream::Stream as StreamImpl;
 use crate::listener::Listener;
 use crate::sodium_ctx::SodiumCtx;

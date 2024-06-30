@@ -1,10 +1,5 @@
 use crate::impl_::cell::Cell as CellImpl;
 use crate::impl_::lambda::IsLambda1;
-use crate::impl_::lambda::IsLambda2;
-use crate::impl_::lambda::IsLambda3;
-use crate::impl_::lambda::IsLambda4;
-use crate::impl_::lambda::IsLambda5;
-use crate::impl_::lambda::IsLambda6;
 use crate::impl_::lazy::Lazy;
 use crate::listener::Listener;
 use crate::sodium_ctx::SodiumCtx;
