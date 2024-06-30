@@ -138,7 +138,7 @@ where
     pub fn map<B, FN>(&self, f: FN) -> Cell<B>
     where
         B: Clone + Send + 'static,
-        FN: IsLambda1<A, B> + Send + Sync + 'static,
+        FN: FnMut(&A) -> B + Send + Sync + 'static,
     {
         Cell {
             impl_: self.impl_.map(f),
@@ -152,7 +152,7 @@ where
     where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
-        FN: IsLambda2<A, B, C> + Send + 'static,
+        FN: FnMut(&A, &B) -> C + Send + 'static,
     {
         Cell {
             impl_: self.impl_.lift2(&cb.impl_, f),
@@ -167,7 +167,7 @@ where
         B: Clone + Send + 'static,
         C: Clone + Send + 'static,
         D: Clone + Send + 'static,
-        FN: IsLambda3<A, B, C, D> + Send + 'static,
+        FN: FnMut(&A, &B, &C) -> D + Send + 'static,
     {
         Cell {
             impl_: self.impl_.lift3(&cb.impl_, &cc.impl_, f),
@@ -183,7 +183,7 @@ where
         C: Clone + Send + 'static,
         D: Clone + Send + 'static,
         E: Clone + Send + 'static,
-        FN: IsLambda4<A, B, C, D, E> + Send + 'static,
+        FN: FnMut(&A, &B, &C, &D) -> E + Send + 'static,
     {
         Cell {
             impl_: self.impl_.lift4(&cb.impl_, &cc.impl_, &cd.impl_, f),
@@ -207,7 +207,7 @@ where
         D: Clone + Send + 'static,
         E: Clone + Send + 'static,
         F: Clone + Send + 'static,
-        FN: IsLambda5<A, B, C, D, E, F> + Send + 'static,
+        FN: FnMut(&A, &B, &C, &D, &E) -> F + Send + 'static,
     {
         Cell {
             impl_: self
@@ -235,7 +235,7 @@ where
         E: Clone + Send + 'static,
         F: Clone + Send + 'static,
         G: Clone + Send + 'static,
-        FN: IsLambda6<A, B, C, D, E, F, G> + Send + 'static,
+        FN: FnMut(&A, &B, &C, &D, &E, &F) -> G + Send + 'static,
     {
         Cell {
             impl_: self
