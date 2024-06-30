@@ -31,53 +31,75 @@ impl SodiumCtx {
     }
 
     /// Create a new constant value [`Cell`] in this context.
-    pub fn new_cell<A: Clone + Send + 'static>(&self, a: A) -> Cell<A> {
+    pub fn new_cell<A>(&self, a: A) -> Cell<A>
+    where
+        A: Clone + Send + 'static,
+    {
         Cell::new(self, a)
     }
 
     /// Create a new stream that will never fire in this context.
-    pub fn new_stream<A: Clone + Send + 'static>(&self) -> Stream<A> {
+    pub fn new_stream<A>(&self) -> Stream<A>
+    where
+        A: Clone + Send + 'static,
+    {
         Stream::new(self)
     }
 
     /// Create a new [`CellSink`] for interfacing I/O and FRP.
-    pub fn new_cell_sink<A: Clone + Send + 'static>(&self, a: A) -> CellSink<A> {
+    pub fn new_cell_sink<A>(&self, a: A) -> CellSink<A>
+    where
+        A: Clone + Send + 'static,
+    {
         CellSink::new(self, a)
     }
 
     /// Create a new [`StreamSink`] for interfacing I/O and FRP.
-    pub fn new_stream_sink<A: Clone + Send + 'static>(&self) -> StreamSink<A> {
+    pub fn new_stream_sink<A>(&self) -> StreamSink<A>
+    where
+        A: Clone + Send + 'static,
+    {
         StreamSink::new(self)
     }
 
     /// Create a new [`CellLoop`] to act as a forward reference for a
     /// [`Cell`] that will be created later.
-    pub fn new_cell_loop<A: Clone + Send + 'static>(&self) -> CellLoop<A> {
+    pub fn new_cell_loop<A>(&self) -> CellLoop<A>
+    where
+        A: Clone + Send + 'static,
+    {
         CellLoop::new(self)
     }
 
     /// Create a new [`StreamLoop`] to act as a forward reference for
     /// a [`Stream`] that will be created later.
-    pub fn new_stream_loop<A: Clone + Send + 'static>(&self) -> StreamLoop<A> {
+    pub fn new_stream_loop<A>(&self) -> StreamLoop<A>
+    where
+        A: Clone + Send + 'static,
+    {
         StreamLoop::new(self)
     }
 
     /// Create a new [`StreamSink`] with a combining function that
     /// allows [`send`][CellSink::send]ing multiple event values per
     /// transaction.
-    pub fn new_stream_sink_with_coalescer<
-        A: Clone + Send + 'static,
-        COALESCER: FnMut(&A, &A) -> A + Send + 'static,
-    >(
+    pub fn new_stream_sink_with_coalescer<A, COALESCER>(
         &self,
         coalescer: COALESCER,
-    ) -> StreamSink<A> {
+    ) -> StreamSink<A>
+    where
+        A: Clone + Send + 'static,
+        COALESCER: FnMut(&A, &A) -> A + Send + 'static,
+    {
         StreamSink::new_with_coalescer(self, coalescer)
     }
 
     /// Run the given function inside a single Sodium transaction,
     /// closing the transaction after the function returns.
-    pub fn transaction<R, K: FnOnce() -> R>(&self, k: K) -> R {
+    pub fn transaction<R, K>(&self, k: K) -> R
+    where
+        K: FnOnce() -> R,
+    {
         self.impl_.transaction(k)
     }
 
@@ -92,7 +114,10 @@ impl SodiumCtx {
 
     /// Execute the given code after the current transaction is
     /// closed, or immediately if there is no current transaction.
-    pub fn post<K: FnMut() + Send + 'static>(&self, k: K) {
+    pub fn post<K>(&self, k: K)
+    where
+        K: FnMut() + Send + 'static,
+    {
         self.impl_.post(k);
     }
 
